@@ -1,5 +1,5 @@
-ARG BASE_IMAGE=$(CONTAINER_REGISTRY)/geocube/base:latest
-FROM $BASE_IMAGE AS builder
+ARG REPOSITORY
+FROM ${REPOSITORY}/geocube-base:latest AS builder
 
 WORKDIR /build
 COPY go.* /build/

@@ -3,7 +3,7 @@ FROM golang:alpine3.17
 RUN apk update && \
     apk upgrade && \
     apk add \
-        build-base \ 
+        build-base \
         curl \
         curl-dev \
         libjpeg-turbo-dev \
