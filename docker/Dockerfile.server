@@ -12,7 +12,6 @@ COPY cmd/server server
 RUN cd server && go build -ldflags="-s -w" .
 
 FROM alpine:3.17
-ENTRYPOINT ["/server"]
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/share /usr/local/share
 RUN apk update && \

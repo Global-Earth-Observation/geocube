@@ -17,3 +17,12 @@ create-server-repo:
 
 push-server:
 	docker push $(REPOSITORY)/$(SERVER_IMAGE):$(TAG)
+
+create-init-db-repo:
+	aws ecr create-repository --repository-name $(INIT_DB_IMAGE)
+
+build-db-init:
+	docker build -t $(REPOSITORY)/$(INIT_DB_IMAGE):$(TAG) -f docker/Dockerfile.init-db .
+
+push-init-db:
+	docker push $(REPOSITORY)/$(INIT_DB_IMAGE):$(TAG)
