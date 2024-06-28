@@ -89,6 +89,7 @@ type GeocubeService interface {
 	GetXYZTileFromFilters(ctx context.Context, instanceID string, recordTags geocube.Metadata, fromTime, toTime time.Time, a, b, z int, min, max float64) ([]byte, error)
 	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
 	GetCubeFromFilters(ctx context.Context, recordTags geocube.Metadata, fromTime, toTime time.Time, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
+	GetPalette(ctx context.Context, name string) (*geocube.Palette, error)
 }
 
 // Service is the GRPC service
@@ -1361,4 +1362,25 @@ func (svc *Service) TileAOI(req *pb.TileAOIRequest, stream pb.Geocube_TileAOISer
 // Version returns version of the geocube
 func (svc *Service) Version(ctx context.Context, req *pb.GetVersionRequest) (*pb.GetVersionResponse, error) {
 	return &pb.GetVersionResponse{Version: GeocubeServerVersion}, nil
+}
+
+// GetPalette returns a Palette from its name
+func (svc *Service) GetPalette(ctx context.Context, req *pb.GetPaletteRequest) (*pb.GetPaletteResponse, error) {
+	palette, err := svc.gsvc.GetPalette(ctx, req.GetName())
+	if err != nil {
+		return nil, formatError("backend.GetPalette: %w", err)
+	}
+	colors := make([]*pb.ColorPoint, len(palette.Points))
+	for i, element := range palette.Points {
+		pbPoint := pb.ColorPoint{Value: element.Val,
+			R: uint32(element.R),
+			G: uint32(element.G),
+			B: uint32(element.B),
+			A: uint32(element.A)}
+		colors[i] = &pbPoint
+	}
+	pbPalette := pb.Palette{Name: palette.Name,
+		Colors: colors,
+	}
+	return &pb.GetPaletteResponse{Palette: &pbPalette}, nil
 }

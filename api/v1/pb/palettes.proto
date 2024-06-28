@@ -1,0 +1,16 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "pb/variables.proto";
+
+
+// GetPaletteRequest define a Getter request
+message GetPaletteRequest {
+  string name = 1;
+}
+
+// GetPaletteResponse define Palette response request
+message GetPaletteResponse {
+  Palette palette = 1;
+}

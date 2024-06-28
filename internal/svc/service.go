@@ -670,3 +670,12 @@ func (svc *Service) unitOfWork(ctx context.Context, f func(txn database.GeocubeT
 	// Commit
 	return txn.Commit()
 }
+
+// GetPalette ...
+func (svc *Service) GetPalette(ctx context.Context, name string) (*geocube.Palette, error) {
+	palette, err := svc.db.ReadPalette(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("GetPalette: %w", err)
+	}
+	return palette, nil
+}

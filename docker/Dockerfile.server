@@ -11,8 +11,12 @@ COPY cmd/server server
 
 RUN cd server && go build -ldflags="-s -w" .
 
+<<<<<<< HEAD
 FROM alpine:3.21
 ENTRYPOINT ["/server"]
+=======
+FROM alpine:3.17
+>>>>>>> c7147388 (feats: new dk files)
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/share /usr/local/share
 RUN apk update && \
