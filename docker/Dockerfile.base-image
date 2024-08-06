@@ -3,37 +3,120 @@ FROM golang:alpine3.21
 RUN apk update && \
     apk upgrade && \
     apk add \
-        build-base \
-        curl \
-        curl-dev \
-        libjpeg-turbo-dev \
-        libwebp-dev \
-        linux-headers \
-        pkgconf \
-        sqlite \
-        sqlite-dev \
-        tiff-dev \
-        unzip \
-        zstd-dev \
-        cmake \
-        proj-dev \
-        geos-dev
-
+    build-base \
+    curl \
+    curl-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    linux-headers \
+    pkgconf \
+    sqlite \
+    sqlite-dev \
+    tiff-dev \
+    unzip \
+    zstd-dev \
+    cmake
 
 WORKDIR /build
 
-ARG GDALVERSION=3.8.2
+ARG PROJVERSION=9.4.1
+RUN mkdir proj && cd proj &&\
+    curl -sL https://github.com/OSGeo/proj.4/releases/download/$PROJVERSION/proj-$PROJVERSION.tar.gz -o proj-$PROJVERSION.tar.gz &&\
+	mkdir proj && \
+	tar  xzf proj-$PROJVERSION.tar.gz -C proj --strip-components 1 &&\
+    cd proj && mkdir build && cd build &&\
+	cmake -DCMAKE_CXX_FLAGS="-O2" -DCMAKE_C_FLAGS="-O2" .. &&\
+	make -j8 && \
+	make install &&\
+    cd /build && rm -rf proj
+
+ARG GEOSVERSION=3.12.2
+RUN mkdir geos && cd geos &&\
+    curl -sL http://download.osgeo.org/geos/geos-$GEOSVERSION.tar.bz2 -o geos.tbz2 &&\
+    tar xf geos.tbz2 &&\
+    cd geos-$GEOSVERSION &&\
+    ./configure CFLAGS="-O2" CXXFLAGS="-O2" &&\
+    make -j8 &&\
+    make install &&\
+    cd /build && rm -rf geos
+
+RUN apk add libpng-dev
+
+ARG GDALVERSION=3.9.1
 RUN mkdir gdal && cd gdal &&\
     curl -sL https://github.com/OSGeo/gdal/releases/download/v$GDALVERSION/gdal-$GDALVERSION.tar.gz -o gdal.tar.gz &&\
-	mkdir -p gdal/build && \
-	tar  xzf gdal.tar.gz -C gdal --strip-components 1 && \
-    cd gdal/build && \
-    cmake .. -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DGDAL_USE_TIFF_INTERNAL=ON -DGDAL_USE_GEOTIFF_INTERNAL=ON && \
-    cmake --build . --target install && \
+	mkdir gdal && \
+	tar  xzf gdal.tar.gz -C gdal --strip-components 1 &&\
+    cd gdal && mkdir build && cd build &&\
+    cmake -DCMAKE_CXX_FLAGS="-O2" -DCMAKE_C_FLAGS="-O2" \
+    -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF \
+    -DOGR_BUILD_OPTIONAL_DRIVERS=OFF \
+    -DGDAL_USE_QHULL=OFF \
+    -DGDAL_USE_SQLITE3=OFF \
+    -DGDAL_USE_GIF=OFF \
+    -DGDAL_USE_GEOS=ON \
+    -DGDAL_USE_CURL=ON \
+    -DGDAL_USE_JPEG=ON \
+    -DGDAL_USE_PNG=ON \
+    -DGDAL_USE_WEBP=ON \
+    -DGDAL_USE_ZSTD=ON \
+    -DGDAL_USE_LIBTIFF_INTERNAL=ON \
+    -DGDAL_USE_GEOTIFF_INTERNAL=ON \
+    -DGDAL_USE_PNG_INTERNAL=ON \
+    -DGDAL_ENABLE_DRIVER_PNG=ON .. && \
+	make -j8 && \
+	make install &&\
+	 (for i in \
+            # BAG driver
+            /usr/local/share/gdal/bag*.xml \
+            # SXF driver
+            /usr/local/share/gdal/default.rsc \
+            # unused
+            /usr/local/share/gdal/*.svg \
+            # unused
+            /usr/local/share/gdal/*.png \
+            # GML driver
+            /usr/local/share/gdal/*.gfs \
+            # GML driver
+            /usr/local/share/gdal/gml_registry.xml \
+            # NITF driver
+            /usr/local/share/gdal/nitf* \
+            # NITF driver
+            /usr/local/share/gdal/gt_datum.csv \
+            # NITF driver
+            /usr/local/share/gdal/gt_ellips.csv \
+            # PDF driver
+            /usr/local/share/gdal/pdf* \
+            # PDS4 driver
+            /usr/local/share/gdal/pds* \
+            # S57 driver
+            /usr/local/share/gdal/s57* \
+            # VDV driver
+            /usr/local/share/gdal/vdv* \
+            # DXF driver
+            /usr/local/share/gdal/*.dxf \
+            # DGN driver
+            /usr/local/share/gdal/*.dgn \
+            # OSM driver
+            /usr/local/share/gdal/osm* \
+            # GMLAS driver
+            /usr/local/share/gdal/gmlas* \
+            # PLScenes driver
+            /usr/local/share/gdal/plscenes* \
+            # netCDF driver
+            /usr/local/share/gdal/netcdf_config.xsd \
+            # PCIDSK driver
+            /usr/local/share/gdal/pci* \
+            # ECW and ERS drivers
+            /usr/local/share/gdal/ecw_cs.wkt \
+            # EEDA driver
+            /usr/local/share/gdal/eedaconf.json \
+            # MAP driver / ImportFromOZI()
+            /usr/local/share/gdal/ozi_* \
+       ;do rm $i; done) &&\
+    (for i in /usr/local/lib/*; do strip -s $i 2>/dev/null || /bin/true; done) &&\
     ldconfig /usr/local/lib &&\
     cd /build && rm -rf gdal
 
-ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/
-
-
 ENV GOFLAGS=-mod=vendor
+COPY godal /godal
