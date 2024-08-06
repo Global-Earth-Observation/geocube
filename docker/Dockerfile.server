@@ -25,6 +25,7 @@ RUN apk update && \
         libwebp \
         sqlite-libs \
         tiff \
+        libpng-dev \
         zstd-libs &&\
     ldconfig /usr/local/lib
 COPY --from=builder /build/server/server /
