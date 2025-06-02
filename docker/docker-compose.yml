@@ -47,8 +47,8 @@ services:
     environment:
       - POSTGRES_PASSWORD=1234
     volumes:
-      - ../interface/database/pg/create.sql:/docker-entrypoint-initdb.d/init.sql
-      - ../interface/messaging/pgqueue/create_table.sql:/docker-entrypoint-initdb.d/init_pgqueue.sql
+      - ../interface/database/pg/create.sql:/docker-entrypoint-initdb.d/init_1.sql
+      - ../interface/messaging/pgqueue/create_table.sql:/docker-entrypoint-initdb.d/init_2.sql
       - postgis-data:/var/lib/postgresql
 
 volumes:
