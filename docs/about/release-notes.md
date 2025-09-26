@@ -9,6 +9,7 @@
 
 ### Bug fixes
 - Non-deterministic pagination of list_records
+- Concurrent access when downloading dataset during consolidation
 
 ### Others
 - optimization GetCube: reduce memory usage using StreamableBitmap

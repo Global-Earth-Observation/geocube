@@ -276,6 +276,7 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 
 	// Push download jobs
 	remainingSize := int64(h.localDownloadMaxMb * 1024 * 1024)
+	var filesToDownloadMutex sync.Mutex
 	if len(filesToDownload) > 0 {
 		log.Logger(ctx).Sugar().Debugf("downloading %d files", len(filesToDownload))
 		files := make(chan FileToDownload, len(filesToDownload))
@@ -302,7 +303,9 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 							return err
 						}
 						if atomic.AddInt64(&remainingSize, -attr.Size) < 0 {
+							filesToDownloadMutex.Lock()
 							filesToDownload[file.URI] = "" // max quota reached: cancel downloading
+							filesToDownloadMutex.Unlock()
 						} else {
 							log.Logger(ctx).Sugar().Debugf("download %s to %s", file.URI.String(), file.LocalURI)
 							if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
