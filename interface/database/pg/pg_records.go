@@ -120,7 +120,7 @@ func (b Backend) FindRecords(ctx context.Context, namelike string, tags geocube.
 
 	// Append the order
 	if order {
-		query += " ORDER BY r.datetime"
+		query += " ORDER BY r.datetime, r.id"
 	}
 
 	// Append the limitOffsetClause

@@ -8,6 +8,7 @@
 ### API
 
 ### Bug fixes
+- Non-deterministic pagination of list_records
 
 ### Others
 - optimization GetCube: reduce memory usage using StreamableBitmap
