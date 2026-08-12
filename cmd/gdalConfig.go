@@ -114,30 +114,27 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 		}
 
 	case gdalConfig.WithS3:
-		resolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
-			return aws.Endpoint{
-				PartitionID:       "aws",
-				URL:               gdalConfig.AwsEndpoint,
-				SigningRegion:     region,
-				HostnameImmutable: true,
-			}, nil
-		})
-
-		config, err := awsConfig.LoadDefaultConfig(ctx,
+		loadOpts := []func(*awsConfig.LoadOptions) error{
 			awsConfig.WithSharedCredentialsFiles([]string{gdalConfig.AwsCredentials}),
 			awsConfig.WithRegion(gdalConfig.AwsRegion),
-			awsConfig.WithEndpointResolver(resolver),
-		)
+		}
+
+		config, err := awsConfig.LoadDefaultConfig(ctx, loadOpts...)
 		if err != nil {
 			return err
 		}
 
-		s3Client := aws3.NewFromConfig(config)
+		s3Opts := []func(*aws3.Options){}
+		if gdalConfig.AwsEndpoint != "" {
+			s3Opts = append(s3Opts, func(o *aws3.Options) {
+				o.BaseEndpoint = aws.String(gdalConfig.AwsEndpoint)
+			})
+		}
+		s3Client := aws3.NewFromConfig(config, s3Opts...)
 		osioS3Handle, err := osioS3.Handle(ctx, osioS3.S3Client(s3Client))
 		if err != nil {
 			return err
 		}
-
 		s3Adapter, err := osio.NewAdapter(osioS3Handle,
 			osio.BlockSize(gdalConfig.BlockSize),
 			osio.NumCachedBlocks(gdalConfig.NumCachedBlocks))
