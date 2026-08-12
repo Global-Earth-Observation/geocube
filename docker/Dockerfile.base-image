@@ -119,4 +119,4 @@ RUN mkdir gdal && cd gdal &&\
     cd /build && rm -rf gdal
 
 ENV GOFLAGS=-mod=vendor
-COPY godal /godal
+# COPY godal /godal

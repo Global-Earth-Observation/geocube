@@ -1,38 +1,35 @@
 ARG REPOSITORY
-FROM ${REPOSITORY}/geocube-base:latest AS builder
-
+FROM ${REPOSITORY}/silveo-geocube-base:latest AS builder
 WORKDIR /build
+ENV GOTOOLCHAIN=auto
 COPY go.* /build/
 COPY vendor vendor
 COPY internal internal
 COPY interface interface
 COPY cmd cmd
 COPY cmd/server server
-
 RUN cd server && go build -ldflags="-s -w" .
 
-<<<<<<< HEAD
 FROM alpine:3.21
-ENTRYPOINT ["/server"]
-=======
-FROM alpine:3.17
->>>>>>> c7147388 (feats: new dk files)
-COPY --from=builder /usr/local/lib /usr/local/lib
-COPY --from=builder /usr/local/share /usr/local/share
 RUN apk update && \
     apk upgrade && \
     apk add \
-        ca-certificates \
-        libcurl \
-        libgcc \
-        proj \
-        geos \
-        libjpeg-turbo \
-        libstdc++ \
-        libwebp \
-        sqlite-libs \
-        tiff \
-        libpng-dev \
-        zstd-libs &&\
+    make \
+    ca-certificates \
+    libcurl \
+    libgcc \
+    gcompat \
+    proj \
+    geos \
+    libjpeg-turbo \
+    libstdc++ \
+    libwebp \
+    sqlite-libs \
+    tiff \
+    libpng-dev \
+    zstd-libs && \
     ldconfig /usr/local/lib
+
+COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /usr/local/share /usr/local/share
 COPY --from=builder /build/server/server /
